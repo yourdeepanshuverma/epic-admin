@@ -29,7 +29,6 @@ import {
   IconWallet,
   IconCurrencyRupee,
   IconHistory,
-  IconTicket,
 } from "@tabler/icons-react";
 import ReusableTable from "../../components/reusableTable";
 import { Badge } from "../../components/ui/badge";
@@ -53,9 +52,13 @@ const loadRazorpayScript = () => {
 const WalletPage = () => {
   const user = useSelector(selectCurrentUser);
   const dispatch = useDispatch();
-  const { data: balanceData, isLoading: isBalanceLoading } =
-    useGetWalletBalanceQuery();
-  const { data: transactionsData } = useGetWalletTransactionsQuery();
+  const {
+    data: balanceData,
+    isLoading: isBalanceLoading,
+    refetch: refetchBalance,
+  } = useGetWalletBalanceQuery();
+  const { data: transactionsData, refetch: refetchTransactions } =
+    useGetWalletTransactionsQuery();
 
   // Key Query
   const {
@@ -119,12 +122,16 @@ const WalletPage = () => {
               razorpay_signature: response.razorpay_signature,
             }).unwrap();
 
-            // Update local user wallet balance
+            // Update local user wallet balance (for Header)
             if (verifyRes?.data?.updatedBalance !== undefined) {
                dispatch(updateUserStats({
                  walletBalance: verifyRes.data.updatedBalance
                }));
             }
+
+            // Refetch data for this page
+            refetchBalance();
+            refetchTransactions();
 
             toast.success("Payment Successful!");
             setIsDialogOpen(false);
@@ -204,8 +211,8 @@ const WalletPage = () => {
         My Wallet
       </h1>
 
-      <div className="grid gap-8 md:grid-cols-3">
-        <Card className="overflow-hidden rounded-[2rem] border-2 shadow-sm md:col-span-2">
+      <div className="w-full">
+        <Card className="overflow-hidden rounded-[2rem] border-2 shadow-sm">
           <CardHeader className="bg-muted/30 pb-8">
             <CardTitle className="text-muted-foreground text-xs font-black tracking-widest uppercase">
               Total Available Balance
@@ -250,45 +257,6 @@ const WalletPage = () => {
               </div>
             </div>
           </CardContent>
-        </Card>
-
-        <Card className="bg-primary shadow-primary/20 flex flex-col justify-between rounded-[2rem] border-none p-6 text-white shadow-2xl">
-          <div className="space-y-2">
-            <IconTicket size={40} className="opacity-50" />
-            <h3 className="text-xl font-black tracking-tight uppercase">
-              Lead Credits
-            </h3>
-            <p className="text-primary-foreground/70 text-xs font-medium">
-              Use credits to unlock leads instantly.
-            </p>
-          </div>
-          <div className="grid gap-3 pt-6">
-            <div className="flex items-center justify-between rounded-xl bg-white/10 p-3">
-              <span className="text-xs font-bold uppercase">Standard</span>
-              <span className="text-lg font-black">
-                {user?.leadCredits?.standard || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-white/10 p-3">
-              <span className="text-xs font-bold uppercase">Premium</span>
-              <span className="text-lg font-black">
-                {user?.leadCredits?.premium || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-white/10 p-3">
-              <span className="text-xs font-bold uppercase">Elite</span>
-              <span className="text-lg font-black">
-                {user?.leadCredits?.elite || 0}
-              </span>
-            </div>
-          </div>
-          <Button
-            variant="secondary"
-            className="mt-6 w-full rounded-xl text-[10px] font-black tracking-widest uppercase"
-            asChild
-          >
-            <a href="/leads/bundles">Buy Packages</a>
-          </Button>
         </Card>
       </div>
 

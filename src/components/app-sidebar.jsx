@@ -109,6 +109,20 @@ const adminNavMain = [
     icon: IconTicket,
     href: "/lead-pricing",
   },
+  {
+    title: "My Packages",
+    icon: IconBriefcase,
+    children: [
+      { title: "Venue Packages", href: "/my-packages/venues" },
+      { title: "Service Packages", href: "/my-packages/services" },
+      { title: "Add New Package", href: "/my-packages/add" },
+    ],
+  },
+  {
+    title: "My Blogs",
+    icon: IconFileDescription,
+    href: "/my-blogs",
+  },
 ];
 
 const vendorNavMain = [
@@ -138,6 +152,11 @@ const vendorNavMain = [
       { title: "Service Packages", href: "/my-packages/services" },
       { title: "Add New Package", href: "/my-packages/add" },
     ],
+  },
+   {
+    title: "My Blogs",
+    icon: IconFileDescription,
+    href: "/my-blogs",
   },
    {
     title: "Reviews",

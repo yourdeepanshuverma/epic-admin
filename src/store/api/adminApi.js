@@ -12,12 +12,104 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Admin"],
+  tagTypes: ["Admin", "AdminPackages", "VenueCategory", "ServiceCategory", "ServiceSubCategory"],
   endpoints: (builder) => ({
     checkAdmin: builder.query({
       query: () => "/admin/check",
     }),
     
+    // --- CATEGORY MANAGEMENT ---
+    
+    // 1. Venue Categories
+    getVenueCategories: builder.query({
+      query: () => "/admin/venue-categories",
+      providesTags: ["VenueCategory"],
+    }),
+    createVenueCategory: builder.mutation({
+      query: (body) => ({
+        url: "/admin/venue-categories",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["VenueCategory"],
+    }),
+    updateVenueCategory: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/admin/venue-categories/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["VenueCategory"],
+    }),
+    deleteVenueCategory: builder.mutation({
+      query: (id) => ({
+        url: `/admin/venue-categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["VenueCategory"],
+    }),
+
+    // 2. Service Categories
+    getServiceCategories: builder.query({
+      query: () => "/admin/service-categories",
+      providesTags: ["ServiceCategory"],
+    }),
+    createServiceCategory: builder.mutation({
+      query: (body) => ({
+        url: "/admin/service-categories",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ServiceCategory"],
+    }),
+    updateServiceCategory: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/admin/service-categories/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["ServiceCategory"],
+    }),
+    deleteServiceCategory: builder.mutation({
+      query: (id) => ({
+        url: `/admin/service-categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ServiceCategory"],
+    }),
+
+    // 3. Service Sub-Categories
+    getServiceSubCategories: builder.query({
+      query: (categoryId) => {
+        // Optional: Support filtering by parent category if passed
+        return categoryId ? `/admin/service-sub-categories?category=${categoryId}` : "/admin/service-sub-categories";
+      },
+      providesTags: ["ServiceSubCategory"],
+    }),
+    createServiceSubCategory: builder.mutation({
+      query: (body) => ({
+        url: "/admin/service-sub-categories",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["ServiceSubCategory"],
+    }),
+    updateServiceSubCategory: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `/admin/service-sub-categories/${id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["ServiceSubCategory"],
+    }),
+    deleteServiceSubCategory: builder.mutation({
+      query: (id) => ({
+        url: `/admin/service-sub-categories/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ServiceSubCategory"],
+    }),
+
     // Location Endpoints
     getCountries: builder.query({
       query: () => "/location/countries",
@@ -32,6 +124,15 @@ export const adminApi = createApi({
     // Master Services
     getAllServices: builder.query({
       query: () => "/admin/services",
+      providesTags: ["Services"],
+    }),
+    createService: builder.mutation({
+      query: (body) => ({
+        url: "/admin/services",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Services"],
     }),
 
     createLeadBundle: builder.mutation({
@@ -135,11 +236,25 @@ export const {
   useGetStatesQuery,
   useGetCitiesByStateQuery,
   useGetAllServicesQuery,
+  useCreateServiceMutation,
   useCreateLeadBundleMutation,
   useGetSystemSettingQuery,
   useUpdateSystemSettingMutation,
   useGetAdminVenuePackagesQuery,
   useUpdateVenuePackageStatusMutation,
   useGetAdminServicePackagesQuery,
-  useUpdateServicePackageStatusMutation
+  useUpdateServicePackageStatusMutation,
+  // Categories
+  useGetVenueCategoriesQuery,
+  useCreateVenueCategoryMutation,
+  useUpdateVenueCategoryMutation,
+  useDeleteVenueCategoryMutation,
+  useGetServiceCategoriesQuery,
+  useCreateServiceCategoryMutation,
+  useUpdateServiceCategoryMutation,
+  useDeleteServiceCategoryMutation,
+  useGetServiceSubCategoriesQuery,
+  useCreateServiceSubCategoryMutation,
+  useUpdateServiceSubCategoryMutation,
+  useDeleteServiceSubCategoryMutation,
 } = adminApi;

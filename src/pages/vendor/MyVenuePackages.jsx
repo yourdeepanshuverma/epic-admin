@@ -68,6 +68,11 @@ const MyVenuePackages = () => {
       header: "Title",
     },
     {
+      accessorKey: "venueCategory",
+      header: "Category",
+      cell: ({ row }) => <Badge variant="outline">{row.original.venueCategory?.name}</Badge>,
+    },
+    {
       accessorKey: "startingPrice",
       header: "Starting Price",
       cell: ({ row }) => `₹${row.original.startingPrice}`,

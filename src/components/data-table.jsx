@@ -147,14 +147,14 @@ export function DataTable({ columns, data: initialData }) {
                 .map((column) => {
                   return (
                     <DropdownMenuCheckboxItem
-                      key={column._id}
+                      key={column.id}
                       className="capitalize"
                       checked={column.getIsVisible()}
                       onCheckedChange={(value) =>
                         column.toggleVisibility(!!value)
                       }
                     >
-                      {column._id}
+                      {column.id}
                     </DropdownMenuCheckboxItem>
                   );
                 })}
@@ -174,9 +174,9 @@ export function DataTable({ columns, data: initialData }) {
           <Table>
             <TableHeader className="bg-muted sticky top-0 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup._id}>
+                <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header._id} colSpan={header.colSpan}>
+                    <TableHead key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -192,9 +192,9 @@ export function DataTable({ columns, data: initialData }) {
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row._id}>
+                  <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell._id}>
+                      <TableCell key={cell.id}>
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),

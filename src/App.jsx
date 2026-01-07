@@ -25,6 +25,14 @@ import { Toaster } from "./components/ui/sonner";
 import AdminOnly from "./components/AdminOnly";
 import AdminVenuePackages from "./pages/admin/packages/AdminVenuePackages";
 import AdminServicePackages from "./pages/admin/packages/AdminServicePackages";
+import VenueCategories from "./pages/admin/categories/VenueCategories";
+import AddVenueCategory from "./pages/admin/categories/AddVenueCategory";
+import ServiceCategories from "./pages/admin/categories/ServiceCategories";
+import AddServiceCategory from "./pages/admin/categories/AddServiceCategory";
+import ServiceSubCategories from "./pages/admin/categories/ServiceSubCategories";
+import AddServiceSubCategory from "./pages/admin/categories/AddServiceSubCategory";
+import MyBlogs from "./pages/vendor/blogs/MyBlogs";
+import BlogForm from "./pages/vendor/blogs/BlogForm";
 
 function App() {
   return (
@@ -55,6 +63,10 @@ function App() {
           </Route>
           <Route path="/my-reviews" element={<div>My Reviews</div>} />
 
+          <Route path="/my-blogs" element={<MyBlogs />} />
+          <Route path="/my-blogs/create" element={<BlogForm />} />
+          <Route path="/my-blogs/edit/:id" element={<BlogForm />} />
+
           {/* ADMIN ONLY ROUTES */}
           <Route element={<AdminOnly />}>
             <Route path="/seed" element={<SeedData />} />
@@ -67,8 +79,9 @@ function App() {
 
             {/* Venues Management */}
             <Route path="venues">
-              <Route path="categories" element={<div>Categories List</div>} />
-              <Route path="categories/add" element={<div>Add Category</div>} />
+              <Route path="categories" element={<VenueCategories />} />
+              <Route path="categories/add" element={<AddVenueCategory />} />
+              <Route path="categories/edit/:id" element={<AddVenueCategory />} />
               <Route path="packages">
                 <Route path="approved" element={<AdminVenuePackages status="approved" />} />
                 <Route path="pending" element={<AdminVenuePackages status="pending" />} />
@@ -79,10 +92,12 @@ function App() {
 
             {/* Services Management */}
             <Route path="services">
-              <Route path="categories" element={<div>Service Categories</div>} />
-              <Route path="categories/add" element={<div>Add Category</div>} />
-              <Route path="subcategories" element={<div>Sub Categories</div>} />
-              <Route path="subcategories/add" element={<div>Add Sub Category</div>} />
+              <Route path="categories" element={<ServiceCategories />} />
+              <Route path="categories/add" element={<AddServiceCategory />} />
+              <Route path="categories/edit/:id" element={<AddServiceCategory />} />
+              <Route path="subcategories" element={<ServiceSubCategories />} />
+              <Route path="subcategories/add" element={<AddServiceSubCategory />} />
+              <Route path="subcategories/edit/:id" element={<AddServiceSubCategory />} />
               <Route path="packages">
                 <Route path="approved" element={<AdminServicePackages status="approved" />} />
                 <Route path="pending" element={<AdminServicePackages status="pending" />} />

@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { vendorApi } from "./vendorApi";
 
 export const leadApi = createApi({
   reducerPath: "leadApi",
@@ -42,6 +43,14 @@ export const leadApi = createApi({
         body: { useCredits }
       }),
       invalidatesTags: ["MyLeads", "Wallet"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(vendorApi.util.invalidateTags(["Transactions", "Wallet"]));
+        } catch (err) {
+          // ignore
+        }
+      },
     }),
     getBundles: builder.query({
       query: () => "/bundles",
@@ -54,6 +63,14 @@ export const leadApi = createApi({
         body: { bundleId }
       }),
       invalidatesTags: ["Bundles", "Wallet"],
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(vendorApi.util.invalidateTags(["Transactions", "Wallet"]));
+        } catch (err) {
+          // ignore
+        }
+      },
     }),
   }),
 });

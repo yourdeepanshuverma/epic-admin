@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import Spinner from "./ui/spinner";
 import { useGetProfileQuery } from "../store/api/vendorApi";
 import { useDispatch } from "react-redux";
-import { setCredentials } from "../store/slices/authSlice";
+import { setCredentials, logout } from "../store/slices/authSlice";
 
 export default function Protected({ children, authentication = true }) {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export default function Protected({ children, authentication = true }) {
       if (authentication) {
         if (isError) {
            console.warn("Protected: Auth failed, redirecting to login");
+           dispatch(logout()); // Clear invalid token to prevent redirect loop
            navigate("/login");
         } else if (profileData?.data) {
            // Sync Redux state with fresh profile data

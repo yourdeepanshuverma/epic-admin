@@ -68,6 +68,11 @@ const MyServicePackages = () => {
       header: "Title",
     },
     {
+      accessorKey: "serviceSubCategory",
+      header: "Category",
+      cell: ({ row }) => <Badge variant="outline">{row.original.serviceSubCategory?.name}</Badge>,
+    },
+    {
       accessorKey: "startingPrice",
       header: "Starting Price",
       cell: ({ row }) => `₹${row.original.startingPrice}`,

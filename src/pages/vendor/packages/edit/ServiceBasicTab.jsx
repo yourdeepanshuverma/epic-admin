@@ -8,6 +8,9 @@ import { Label } from "../../../../components/ui/label";
 import { Textarea } from "../../../../components/ui/textarea";
 import { Checkbox } from "../../../../components/ui/checkbox";
 import Autocomplete from "react-google-autocomplete";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../../../components/ui/card";
+import { Loader2, ImagePlus, X, MapPin, Briefcase, Banknote, List } from "lucide-react";
+import { DynamicIcon } from "../../../../components/DynamicIcon";
 
 const ServiceBasicTab = ({ pkg }) => {
   const { register, handleSubmit, setValue, formState: { errors } } = useForm();
@@ -37,18 +40,33 @@ const ServiceBasicTab = ({ pkg }) => {
       }
 
       // Services Logic for Service Package
-      // In Service packages, services are linked to ServiceSubCategory
-      // Backend populate in getServicePackage now includes services
       if (pkg.serviceSubCategory && pkg.serviceSubCategory.services) {
           setAvailableServices(pkg.serviceSubCategory.services);
+      }
+      
+      // Sync selected services
+      if (pkg.services) {
+        if (Array.isArray(pkg.services)) {
+            const serviceMap = {};
+            pkg.services.forEach(s => {
+                serviceMap[s.name] = { value: s.value, icon: s.icon, type: s.type };
+            });
+            setSelectedServices(serviceMap);
+        } else {
+            setSelectedServices(pkg.services);
+        }
       }
     }
   }, [pkg, setValue]);
 
-  const handleServiceChange = (serviceName, value) => {
+  const handleServiceChange = (service, value) => {
     setSelectedServices(prev => ({
         ...prev,
-        [serviceName]: value
+        [service.name]: {
+            value: value,
+            icon: service.icon,
+            type: service.type
+        }
     }));
   };
 
@@ -62,6 +80,11 @@ const ServiceBasicTab = ({ pkg }) => {
     }
   };
 
+  const removeImage = () => {
+    setImagePreview(null);
+    setSelectedFile(null);
+  };
+
   const handlePlaceSelected = (place) => {
     if (!place.address_components) return;
 
@@ -73,7 +96,6 @@ const ServiceBasicTab = ({ pkg }) => {
     const country = getComponent("country");
     let pincode = getComponent("postal_code");
 
-    // Fallback: Extract pincode from formatted address if missing
     if (!pincode && place.formatted_address) {
         const pincodeMatch = place.formatted_address.match(/\b\d{6}\b/);
         if (pincodeMatch) pincode = pincodeMatch[0];
@@ -86,7 +108,6 @@ const ServiceBasicTab = ({ pkg }) => {
     setValue("location.state", state);
     setValue("location.country", country);
     setValue("location.pincode", pincode);
-    // setValue("location.fullAddress", fullAddress); // Do not auto-fill full address
     setValue("location.googleMapsLink", place.url || "");
   };
 
@@ -101,7 +122,16 @@ const ServiceBasicTab = ({ pkg }) => {
     }
     
     formData.append("location", JSON.stringify(data.location));
-    formData.append("services", JSON.stringify(selectedServices));
+    
+    // Transform selectedServices object to array
+    const servicesArray = Object.entries(selectedServices).map(([name, data]) => ({
+      name,
+      value: data.value,
+      icon: data.icon,
+      type: data.type
+    })).filter(s => s.value !== undefined && s.value !== "" && s.value !== false && s.value !== null);
+      
+    formData.append("services", JSON.stringify(servicesArray));
 
     try {
       await updateServiceBasic({ id: pkg._id, data: formData }).unwrap();
@@ -112,156 +142,227 @@ const ServiceBasicTab = ({ pkg }) => {
   };
 
   return (
-    <div className="max-w-3xl border p-6 rounded-xl bg-card">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Package Title</Label>
-              <Input 
-                id="title" 
-                {...register("title", { required: "Title is required" })} 
-              />
-              {errors.title && <p className="text-red-500 text-sm">{errors.title.message}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="startingPrice">Starting Price (₹)</Label>
-              <Input 
-                type="number" 
-                id="startingPrice" 
-                {...register("startingPrice", { required: "Price is required" })} 
-              />
-               {errors.startingPrice && <p className="text-red-500 text-sm">{errors.startingPrice.message}</p>}
-            </div>
-        </div>
-        
-        <div className="space-y-2">
-            <Label>Sub Category</Label>
-            <Input 
-                value={pkg?.serviceSubCategory?.name || "N/A"} 
-                disabled 
-                className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">Category cannot be changed.</p>
-        </div>
-
-        <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              className="h-32"
-              {...register("description", { required: "Description is required" })} 
-            />
-            {errors.description && <p className="text-red-500 text-sm">{errors.description.message}</p>}
-        </div>
-
-        {/* Amenities & Services */}
-        {availableServices.length > 0 && (
-            <div className="space-y-4 pt-4 border-t">
-                <h3 className="text-lg font-semibold">Amenities & Services</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {availableServices.map((service) => (
-                        <div key={service._id} className="space-y-1">
-                            <Label>{service.name}</Label>
-                            {service.type === "checkbox" ? (
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox 
-                                        id={service._id} 
-                                        checked={!!selectedServices[service.name]}
-                                        onCheckedChange={(checked) => handleServiceChange(service.name, checked)}
-                                    />
-                                    <label htmlFor={service._id} className="text-sm">Yes</label>
-                                </div>
-                            ) : service.type === "textarea" ? (
-                                <Textarea 
-                                    defaultValue={selectedServices[service.name] || ""}
-                                    placeholder={`Enter details for ${service.name}`}
-                                    onChange={(e) => handleServiceChange(service.name, e.target.value)}
-                                />
-                            ) : (
-                                <Input 
-                                    type={service.type === "number" ? "number" : "text"}
-                                    defaultValue={selectedServices[service.name] || ""}
-                                    placeholder={`Enter ${service.name}`}
-                                    onChange={(e) => handleServiceChange(service.name, e.target.value)}
-                                />
-                            )}
-                        </div>
-                    ))}
+      {/* Left Column */}
+      <div className="lg:col-span-2 space-y-6">
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-primary" />
+                    <CardTitle>Service Details</CardTitle>
                 </div>
-            </div>
+                <CardDescription>Update essential information about your service offering.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Package Title</Label>
+                        <Input 
+                            id="title" 
+                            className="text-lg font-medium"
+                            {...register("title", { required: "Title is required" })} 
+                        />
+                        {errors.title && <p className="text-red-500 text-xs">{errors.title.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="startingPrice">Starting Price (₹)</Label>
+                        <div className="relative">
+                            <Banknote className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                type="number" 
+                                id="startingPrice" 
+                                className="pl-9"
+                                {...register("startingPrice", { required: "Price is required" })} 
+                            />
+                        </div>
+                        {errors.startingPrice && <p className="text-red-500 text-xs">{errors.startingPrice.message}</p>}
+                    </div>
+                </div>
+                
+                <div className="space-y-2">
+                    <Label>Sub Category</Label>
+                    <Input 
+                        value={pkg?.serviceSubCategory?.name || "N/A"} 
+                        disabled 
+                        className="bg-muted text-muted-foreground"
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea 
+                        id="description" 
+                        className="min-h-[120px]"
+                        {...register("description", { required: "Description is required" })} 
+                    />
+                    {errors.description && <p className="text-red-500 text-xs">{errors.description.message}</p>}
+                </div>
+            </CardContent>
+        </Card>
+
+        {availableServices.length > 0 && (
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <List className="w-5 h-5 text-primary" />
+                        <CardTitle>Features & Inclusions</CardTitle>
+                    </div>
+                    <CardDescription>Update the features included in this package.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        {availableServices.map((service) => (
+                            <div key={service._id} className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <DynamicIcon name={service.icon} className="w-4 h-4 text-primary" />
+                                    <Label className="text-xs font-semibold uppercase text-muted-foreground">{service.name}</Label>
+                                </div>
+                                {service.type === "checkbox" ? (
+                                    <div className="flex items-center space-x-2 border p-3 rounded-md">
+                                        <Checkbox 
+                                            id={service._id} 
+                                            checked={!!selectedServices[service.name]?.value}
+                                            onCheckedChange={(checked) => handleServiceChange(service, checked)}
+                                        />
+                                        <label htmlFor={service._id} className="text-sm cursor-pointer">Included / Yes</label>
+                                    </div>
+                                ) : service.type === "textarea" ? (
+                                    <Textarea 
+                                        className="h-20"
+                                        defaultValue={selectedServices[service.name]?.value || ""}
+                                        placeholder={`Enter details for ${service.name}`}
+                                        onChange={(e) => handleServiceChange(service, e.target.value)}
+                                    />
+                                ) : (
+                                    <Input 
+                                        type={service.type === "number" ? "number" : "text"}
+                                        defaultValue={selectedServices[service.name]?.value || ""}
+                                        placeholder={`Enter ${service.name}`}
+                                        onChange={(e) => handleServiceChange(service, e.target.value)}
+                                    />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
         )}
 
-        {/* Location Details */}
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="text-lg font-semibold">Location</h3>
-          
-          <div className="space-y-2">
-            <Label>Update Address (Search Google Maps)</Label>
-            <div className="relative">
-              <Autocomplete
-                apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
-                onPlaceSelected={handlePlaceSelected}
-                options={{
-                  types: ["establishment", "geocode"],
-                  componentRestrictions: { country: "in" },
-                }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          </div>
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <CardTitle>Service Location</CardTitle>
+                </div>
+                <CardDescription>Update location coverage.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Update Address (Search Google Maps)</Label>
+                    <div className="relative">
+                        <Autocomplete
+                            apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+                            onPlaceSelected={handlePlaceSelected}
+                            options={{
+                                types: ["establishment", "geocode"],
+                                componentRestrictions: { country: "in" },
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Start typing to search..."
+                        />
+                    </div>
+                </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>City</Label>
-              <Input {...register("location.city", { required: "City is required" })} readOnly className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label>State</Label>
-              <Input {...register("location.state", { required: "State is required" })} readOnly className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label>Country</Label>
-              <Input {...register("location.country", { required: "Country is required" })} readOnly className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label>Pincode <span className="text-red-500">*</span></Label>
-              <Input {...register("location.pincode", { required: "Pincode is required" })} />
-            </div>
-             <div className="space-y-2 md:col-span-2">
-              <Label>Locality</Label>
-              <Input {...register("location.locality", { required: "Locality is required" })} />
-            </div>
-             <div className="space-y-2 md:col-span-2">
-              <Label>Full Address</Label>
-              <Textarea {...register("location.fullAddress", { required: "Full Address is required" })} />
-            </div>
-          </div>
-        </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Locality</Label>
+                        <Input {...register("location.locality", { required: "Locality is required" })} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>City</Label>
+                        <Input {...register("location.city", { required: "City is required" })} readOnly className="bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>State</Label>
+                        <Input {...register("location.state", { required: "State is required" })} readOnly className="bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Country</Label>
+                        <Input {...register("location.country", { required: "Country is required" })} readOnly className="bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Pincode</Label>
+                        <Input {...register("location.pincode", { required: "Pincode is required" })} />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label>Full Address</Label>
+                        <Textarea {...register("location.fullAddress", { required: "Full Address is required" })} />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      </div>
 
-        {/* Featured Image */}
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="text-lg font-semibold">Featured Image</h3>
-           <div className="space-y-2">
-            <Input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleImageChange}
-            />
-            {imagePreview && (
-              <div className="mt-4">
-                <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-md" />
-              </div>
+      {/* Right Column */}
+      <div className="space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Featured Image</CardTitle>
+                <CardDescription>Main cover image.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center bg-muted/50 hover:bg-muted/80 transition-colors">
+                        {imagePreview ? (
+                            <div className="relative w-full h-full group">
+                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <Button 
+                                        type="button" 
+                                        variant="destructive" 
+                                        size="sm"
+                                        onClick={removeImage}
+                                    >
+                                        <X className="w-4 h-4 mr-2" /> Remove
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <Label 
+                                htmlFor="image" 
+                                className="flex flex-col items-center justify-center w-full h-full cursor-pointer"
+                            >
+                                <div className="p-4 text-center">
+                                    <ImagePlus className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                                    <span className="text-muted-foreground text-sm font-medium">Click to upload image</span>
+                                </div>
+                            </Label>
+                        )}
+                        <input 
+                            id="image" 
+                            type="file" 
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageChange}
+                        />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Button type="submit" size="lg" className="w-full font-bold" disabled={isLoading}>
+            {isLoading ? (
+                <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Updating...
+                </>
+            ) : (
+                "Save Changes"
             )}
-           </div>
-        </div>
-
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update Basic Details"}
         </Button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 
